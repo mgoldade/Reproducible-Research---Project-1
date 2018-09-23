@@ -1,0 +1,107 @@
+---
+title: "Project1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+Save the data in tempfile named "act", csv has been saved in the C drive.
+Remove the NA rows so that we can ignore them for this part
+
+```{r activity, include=TRUE}
+setwd("C:/")
+
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+act<-read.csv("activity.csv",header=TRUE,sep=",")
+actsub<-subset(act, !is.na(act$steps))
+df<-as.data.frame(act)
+df[is.na(df)]<-0
+dfsum<-cbind(aggregate(steps ~ date, df, sum))
+dfsum$steps<-dfsum$steps/288
+dfsumint<-cbind(aggregate(steps ~ interval, df, sum))
+dfsumint$steps<-dfsumint$steps/53
+```
+
+Histogram of Steps
+
+```{r histogram, echo=TRUE}
+
+hist(actsub$steps,main="",xlab="Steps")
+```
+
+Average Number of Steps, [NA] values removed
+
+```{r steps.avg, echo=TRUE}
+mean(actsub$steps)
+```
+
+Median Number of Steps, [NA] values removed
+
+```{r steps.median, echo=TRUE}
+median(actsub$steps)
+```
+
+Time-Series Plot
+
+```{r time series, echo=TRUE}
+ggplot(dfsumint, aes(interval, steps)) + geom_line() + ylab("Avg Steps")
+
+```
+
+The Maximum Average Number of Steps Occured at Interval
+
+```{r maxavg, echo=TRUE}
+findmax<-head(arrange(dfsumint, desc(steps)))
+maxint<-first(findmax$interval)
+maxint
+```
+Number of NA Values in the File:
+```{r Handle NA values,echo=TRUE}
+sum(is.na(act))
+```
+Replace NA Values with Average over Day:
+```{r handle NA, echo=TRUE}
+dfsum$steps<-dfsum$steps/288
+NAs.a <- is.na(act$steps)
+act$steps[NAs.a] <- dfsum[match(act$date[NAs.a], dfsum$date),]$steps
+
+```
+
+```{r histimput, echo=TRUE}
+
+hist(act$steps,main="",xlab="Steps")
+```
+
+Average Number of Steps, [NA] values imputed
+
+```{r imputed.avg, echo=TRUE}
+mean(act$steps)
+```
+
+Median Number of Steps, [NA] values imputed
+
+```{r imputed.median, echo=TRUE}
+median(act$steps)
+```
+
+We do not see much of a difference when we impute the values using the average over the day.
+
+Add a Variable Telling us Whether the Date is a Weekend or Weekday and then Plot Time-Series of the Intervals on Weekends and Weekdays
+
+``` {r WeekendWeekday, echo=TRUE}
+act$weekday=ifelse(weekdays(as.Date(act$date)) %in% c("Saturday","Sunday"),"Weekend","Weekday")
+actweekend<-act[ which(act$weekday=='Weekend'), ]
+actweekday<-act[ which(act$weekday=='Weekday'), ]
+actsumintday<-cbind(aggregate(steps ~ interval, actweekday, sum))
+actsumintday$steps<-actsumintday$steps/53
+actsumintend<-cbind(aggregate(steps ~ interval, actweekend, sum))
+actsumintend$steps<-actsumintend$steps/53
+p1<-ggplot(actsumintday, aes(interval, steps)) + geom_line() + ylab("Avg Steps") + labs(title="weekday")
+p2<-ggplot(actsumintend, aes(interval, steps)) + geom_line() + ylab("Avg Steps") + labs(title="weekend")
+grid.arrange(p1,p2,nrow=2)
+```
+
