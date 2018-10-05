@@ -4,8 +4,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,  fig.path='Figs/')
 ```
 Save the data in tempfile named "act", csv has been saved in the C drive.
 Remove the NA rows so that we can ignore them for this part
@@ -48,6 +47,7 @@ median(actsub$steps)
 Time-Series Plot
 
 ```{r time series, echo=TRUE}
+
 ggplot(dfsumint, aes(interval, steps)) + geom_line() + ylab("Avg Steps")
 
 ```
